@@ -13,11 +13,13 @@ mongoose.connect('mongodb://localhost/jihoon_testdb');
 
 var Schema = mongoose.Schema;
 var contactSchema = new Schema({
-  place: String,
-  iid: String,
-  name: String,
-  pictureUrl: String,
-  picture: Buffer,
+  userId: String, // Facebook User ID
+  place: String, // (Facebook | Contact | Custom)
+  name: String, // name
+  phone: String, // phone
+  email: String, // email
+  pictureUrl: String, 
+  pictureEnc: String
   //uid: {type: mongoose.SchemaTypes.ObjectId, required: true}
 });
 
@@ -73,6 +75,24 @@ router.post('/add/fb', function(req, res){
 
 router.post('/add/dv', function(req, res){
   res.send("test");
+});
+
+var uniqueId = "";
+router.post('/add/:uniqueId/custom', function(req, res){
+	var new_contact = new Contact({
+		userId: req.params.uniqueId,
+		place: "custom",
+		name: req.body.name,
+		phone: req.body.phone,
+		email: req.body.email,
+		pictureUrl: "", 
+		pictureEnc: req.body.picEnc
+	});
+	new_contact.save(function(err, contact){
+		if(err) return console.error(err);
+		console.dir(contact);
+		return res.json({"id":contact._id});
+	});
 });
 
 module.exports = router;
