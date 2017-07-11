@@ -25,60 +25,13 @@ var contactSchema = new Schema({
 
 var Contact = mongoose.model('contact', contactSchema);
 
-router.get('/clear', function(req, res, next) {
-
+router.get('/show/:uniqueId/custom/', function(req, res){
+	var uid = req.params.uniqueId;
+	Contact.find({userId: uid}, function(err, contacts){
+		return res.json(contacts);
+	});
 });
-
-router.get('/all', function(req, res, next){
-  res.send('get all information!');
-});
-
-router.post('/add/fb', function(req, res){
-  var new_contact = new Contact({});
-  var new_uid = sha1(req.query.id).substring(0, 24);
-  new_contact.place = "facebook";
-  new_contact.iid = req.query.id;
-  new_contact.name = req.query.name;
-  new_contact.pictureUrl = req.query.url;
-  new_contact.picture = undefined;
-  //console.log(req);
-  if(!(req.query.id) || !(req.query.name) || !(req.query.url)){
-    return res.json({result:0});
-  }
-  console.log(mongoose.Types.ObjectId.isValid(new_uid));
-  new_contact._id = new_uid;
-  Contact.findById({place: "facebook", _id: new_uid}, function(err, contact){
-    if(err) return res.json({result:0, error: err});
-    if(!contact){
-      new_contact.save(function(err){
-        if(err){
-          console.error(err);
-          return res.json({result:0, error: err});
-        }else{
-          return res.json({result:1});
-        }
-      });
-    }else{
-      contact.name = req.query.name;
-      contact.pictureUrl = req.query.url;
-      contact.save(function(err){
-        if(err){
-          console.error(err);
-          return res.json({result:0, error:err});
-        }else{
-          return res.json({result:1});
-        }
-      });
-    }
-  });
-});
-
-router.post('/add/dv', function(req, res){
-  res.send("test");
-});
-
-var uniqueId = "";
-router.post('/add/:uniqueId/custom', function(req, res){
+router.post('/add/:uniqueId/custom/', function(req, res){
 	var new_contact = new Contact({
 		userId: req.params.uniqueId,
 		place: "custom",
@@ -94,5 +47,24 @@ router.post('/add/:uniqueId/custom', function(req, res){
 		return res.json({"id":contact._id});
 	});
 });
-
+router.post('/update/:uniqueId/custom/:contactId/', function(req, res){
+	Contact.findById(req.params.contactId, function(err, result){
+		if(err) return res.status(500).json({error: "database fail"});
+		if(!result) return res.status(404).json({error: "cannot find"});
+		result.name = req.body.name
+		result.phone = req.body.phone
+		result.email = req.body.email
+		result.pictureEnc = req.body.picEnc
+		result.save(function(err, contact){
+			if(err) return res.status(500).json({error: 'failed to update'});
+			return res.json({id: contact._id});
+		})
+	});
+});
+router.post('/delete/:uniqueId/custom/', function(req, res){
+	Contact.remove({userId: req.params.uniqueId,_id: req.body.contactId}, function(err, result){
+		if(err) return res.status(500).json({error: "database fail"});
+		return res.json({"ok":"1"});
+	});
+});
 module.exports = router;
